@@ -4,6 +4,10 @@ import com.email.emaildemo.constants.Constants;
 import com.email.emaildemo.entity.MailEntity;
 import com.email.emaildemo.utils.PropertiesUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -68,21 +72,30 @@ public class EMailSender {
      * @throws Exception 如果发送失败会抛出异常信息
      */
     public void send() throws Exception {
+        JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl();
+
         //校验发送邮件对象参数是否设置
         this.checkMailParams(mail);
+
         //读取/resource/mail.properties文件内容
         final PropertiesUtils properties;
         properties = new PropertiesUtils("mail");
+
         // 创建Properties 类用于记录邮箱的一些属性
         final Properties props = new Properties();
+
         // 表示SMTP发送邮件，进行身份验证
         props.put("mail.smtp.auth", "true");
+
         //此处填写SMTP服务器
         props.put("mail.smtp.host", properties.getValue("send.mail.smtp.service"));
+
         //设置端口号，QQ邮箱两个端口465/587
         props.put("mail.smtp.port", properties.getValue("send.mail.smtp.prot"));
+
         // 设置发送邮箱
         props.put("mail.user", properties.getValue("send.mail.from.address"));
+
         // 设置授权码
         props.put("mail.password", properties.getValue("send.mail.from.smtp.pwd"));
 
@@ -97,36 +110,51 @@ public class EMailSender {
         };
         // 使用环境属性和授权信息，创建邮件会话
         Session mailSession = Session.getInstance(props, authenticator);
-        // 创建邮件消息
-        MimeMessage message = new MimeMessage(mailSession);
+        javaMailSender.setSession(mailSession);
         // 设置发件人
         String nickName = MimeUtility.encodeText(properties.getValue("send.mail.from.nickname"));
         InternetAddress form = new InternetAddress(nickName + " <" + props.getProperty("mail.user") + ">");
-        message.setFrom(form);
 
-        // 设置邮件标题
-        message.setSubject(mail.getTitle());
-        //html发送邮件
+        //创建multipart类型的Email，邮件由多部分组成，其中一部分是Email体，其他部分是附件
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+
+        /*由于javax.mail.internet.MimeMessage本身的API有些笨重，Spring提供MimeMessageHelper可以提供帮助*/
+        /*第二个参数布尔值是true，表示这个消息是multipart类型的，得到MimeMessageHelper实例之后，就可以组装Email消息*/
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage,true,"UTF-8");
+
+        helper.setFrom(form);
+
+        helper.setSubject(mail.getTitle());
+
         if (mail.getContentType().equals(Constants.SEND_MAIL_HTML_TYPE)) {
-            // 设置邮件的内容体 默认使用html方式发送
-            message.setContent(mail.getContent(), StringUtils.isBlank(mail.getContentType()) ? Constants.SEND_MAIL_HTML_TYPE : mail.getContentType());
+            // 设置邮件的内容体 用字符串拼接的方式构建消息（还有使用模板生成Email的方式） 发送富文本内容的Email 第二个参数表示传递进来的第一个参数是HTML
+            helper.setText("<html><body><img src='cid:deshan'><h3>"+mail.getContent()+"</h3></body></html>",true);
+            ClassPathResource img = new ClassPathResource("deshan.jpeg");
+            helper.addInline("deshan",img);
+
         } else if (mail.getContentType().equals(Constants.SEND_MAIL_TEXT_TYPE)) {
             // Text文本方式发送
-            message.setText(mail.getContent());
+            helper.setText(mail.getContent());
         }
+
+        //添加附件
+        FileSystemResource couponImage = new FileSystemResource("F:/img/deshan.jpeg");
+
+        helper.addAttachment(MimeUtility.encodeWord(couponImage.getFilename(),"utf-8","B"),couponImage);
+
         //发送邮箱地址
         List<String> targets = mail.getList();
         for (String target : targets) {
             try {
                 // 设置收件人的邮箱
                 InternetAddress to = new InternetAddress(target);
-                message.setRecipient(Message.RecipientType.TO, to);
-                // 发送邮件
-                Transport.send(message);
+                helper.setTo(to);
+                javaMailSender.send(mimeMessage);
             } catch (Exception e) {
                 continue;
             }
         }
+
     }
 
     /**

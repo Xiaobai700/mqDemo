@@ -13,12 +13,12 @@ public class MemberController {
     private MemberService memberService;
 
     @RequestMapping("/registerMember")
-    @Scheduled(fixedRate = 2000)
+    //@Scheduled(fixedRate = 2000)
     public void registerMember() throws Exception {
         Member member = new Member();
         member.setUsername("zhangsan");
         member.setPassword("123456");
-        member.setEmail("2504964152@qq.com");
+        member.setEmail("1053373312@qq.com");
         memberService.memberRegister(member);
     }
 }

@@ -15,7 +15,7 @@ public class MemberRegistrtRabbitMQConfiguration {
     private static Logger logger = LoggerFactory.getLogger(MemberRegistrtRabbitMQConfiguration.class);
 
     /**
-     * 创建通配符交换机实例
+     * 创建Topic Exchange实例
      *
      * @return 通配符交换机实例
      */

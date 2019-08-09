@@ -27,7 +27,7 @@ public class MemberSendMailReceiver {
         new EMailSender()
                 .setTitle("通知邮件")
                 .setContent("收到邮件回复！")
-                .setContentType(Constants.SEND_MAIL_TEXT_TYPE)
+                .setContentType(Constants.SEND_MAIL_HTML_TYPE)
                 .setSendMailTargets(new ArrayList<String>() {{
                     add("2504964152@qq.com");
                 }}).send();
