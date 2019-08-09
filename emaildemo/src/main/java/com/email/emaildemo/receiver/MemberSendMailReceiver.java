@@ -29,7 +29,7 @@ public class MemberSendMailReceiver {
                 .setContent("收到邮件回复！")
                 .setContentType(Constants.SEND_MAIL_HTML_TYPE)
                 .setSendMailTargets(new ArrayList<String>() {{
-                    add("2504964152@qq.com");
+                    add("1053373312@qq.com");
                 }}).send();
     }
 
